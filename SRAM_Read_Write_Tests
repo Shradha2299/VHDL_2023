@@ -1,0 +1,55 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+entity SRAM is
+port
+(
+rst, clk    : in std_logic;
+wr_cmd, rd_cmd, chk_cmd, done, proceed    : out std_logic;
+write_completed, read_completed, check_completed    : out std_logic;
+ce, we, oe  : out std_logic;
+pass_mon    : out std_logic;
+a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12  : out std_logic;
+data_in     : out std_logic_vector(7 downto 0);
+data_out    : in std_logic_vector(7 downto 0);
+fail        : out std_logic_vector(7 downto 0);
+)
+end SRAM;
+
+architecture arc of SRAM is
+type state_values is (idle, write_en, write_dis, write_comp, read_en, read_dis, check_wait, pass_fail);
+signal pres_state, next_state: state_values;
+signal data_reg: std_logic_vector(7 downto 0);
+signal fail_cnt: std_logic_vector(13 downto 0);
+signal adr_cnt, adr_ch, addr: std_logic_vector(12 downto 0);
+signal addr_s: std_logic;
+
+begin
+--RESET
+Reset_check: process(rst, clk)
+begin
+  if (rst = '0') then
+    pres_state <= idle;
+  elsif (clk'event and clk = '1') then
+    pres_state <= next_state;
+  end if;
+end process Reser_check;
+
+--FSM COMBINATIONAL BLOCK
+--State Transition
+
+fsm_trstn: process(rst, pres_state, adr_ch, wr_cmd, rd_cmd, chk_cmd, done, proceed)
+begin
+  case pres_state is
+    when idle =>
+      if(wr_cmd = '1') then
+        next_state <= write_en;
+      elsif(rd_cmd = '1') then
+        next_state <= read_en;
+      else
+        next_state <= idle;
+      end if;
+    when wrtie_en =>
+      
