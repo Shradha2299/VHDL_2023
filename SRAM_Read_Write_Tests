@@ -51,5 +51,96 @@ begin
       else
         next_state <= idle;
       end if;
+
     when wrtie_en =>
+      if adr_ch = "1111111111111" then
+        next_state <= write_comp;
+      else
+        next_state <= write_dis;
+      end if;
+
+    when write_dis =>
+      next_state <= write_en;
+
+    when write_comp =>
+      if proceed = '1' then
+        next_state <= idle;
+      else 
+        next_state <= write_comp;
+      end if;
+
+    when read_dis =>
+      if adr_ch = "1111111111111" then
+        next_state <= check_wait;
+      else
+        next_state <= read_en;
+      end if;
+
+    when read_en =>
+      next_state <= read_dis;
+
+    when check_wait =>
+      if chk_cmd = '1' then
+        next_state <= pass_fail;
+      else 
+        next_state <= check_wait;
+      end if;
+
+    when pass_fail =>
+      if done = '1' then
+        next_state <= idle
+      else
+        next_state <= pass_fail;
+      end if;
+
+    when others =>
+      next_state <= idle;
+  end case;
+end process fem_trstn;
+
+fsm_outputs: process(pres_state, adr_ch, data_out)
+begin
+  case pres_state is
+    when idle =>
+      we = '1';
+      ce = '1';
+      oe = '1';
+      data_in <= "00000000";
+      pass_mon <= '0';
+      fail_cnt <= "00000000000000";
+      data_reg <= "00000000";
+      addr_s <= '1';
+      write_completed <= '0';
+      read_completed <= '0';
+      check_completed <= '0';
+
+    when write_en =>
+      we = '1';
+      ce = '0';
+      oe = '1';
+      data_in <= "01011010";                --5Ah
+      pass_mon <= '0';
+      fail_cnt <= "00000000000000";
+      addr_s <= '1';
+      write_completed <= '0';
+      read_completed <= '0';
+      check_completed <= '0';
+
+    when write_dis =>
+      we = '0';
+      ce = '0';
+      oe = '1';
+      data_in <= "01011010";
+      addr_s <= '1';
+
+    when write_comp =>
+      we = '1';
+      ce = '1';
+      oe = '1';
+      data_in <= "00000000";
+      addr_s <= '1';
+      write_completed <= '1';
+      read_completed <= '0';
+      check_completed <= '0';      
+
       
