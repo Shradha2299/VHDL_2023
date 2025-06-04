@@ -102,9 +102,9 @@ fsm_outputs: process(pres_state, adr_ch, data_out)
 begin
   case pres_state is
     when idle =>
-      we = '1';
-      ce = '1';
-      oe = '1';
+      we <= '1';
+      ce <= '1';
+      oe <= '1';
       data_in <= "00000000";
       pass_mon <= '0';
       fail_cnt <= "00000000000000";
@@ -115,9 +115,9 @@ begin
       check_completed <= '0';
 
     when write_en =>
-      we = '1';
-      ce = '0';
-      oe = '1';
+      we <= '1';
+      ce <= '0';
+      oe <= '1';
       data_in <= "01011010";                --5Ah
       pass_mon <= '0';
       fail_cnt <= "00000000000000";
@@ -127,20 +127,113 @@ begin
       check_completed <= '0';
 
     when write_dis =>
-      we = '0';
-      ce = '0';
-      oe = '1';
+      we <= '0';
+      ce <= '0';
+      oe <= '1';
       data_in <= "01011010";
       addr_s <= '1';
 
     when write_comp =>
-      we = '1';
-      ce = '1';
-      oe = '1';
+      we <= '1';
+      ce <= '1';
+      oe <= '1';
       data_in <= "00000000";
       addr_s <= '1';
       write_completed <= '1';
       read_completed <= '0';
       check_completed <= '0';      
 
-      
+    when read_en =>
+      we <= '1';
+      ce <= '0';
+      oe <= '0';
+      data_in <= "ZZZZZZZZ";
+      pass_mon <= '0';
+      data_reg <= data_out;
+      addr_s <= '1';
+      write_completed <= '1';
+      read_completed <= '0';
+      check_completed <= '0';
+
+    when read_dis =>
+      we <= '1';
+      ce <= '1';
+      oe <= '0';
+      data_in <= "ZZZZZZZZ";
+      data_reg <= "data_out";
+      addr_s <= '0';
+      if data_reg /= "01011010" then
+        fail_cnt <= fail_cnt + 1;
+      end if;
+
+    when check_wait =>
+      we <= '1';
+      ce <= '1';
+      oe <= '1';
+      data_in <= "ZZZZZZZZ";
+      pass_mon <= '0';
+      addr_s <= '1';
+      write_completed <= '1';
+      read_completed <= '1';
+      check_completed <= '0';
+
+    when pass_fail =>
+      we <= '1';
+      ce <= '1';
+      oe <= '1';
+      data_in <= "ZZZZZZZZ";
+      if fail_cnt = "00000000000000" then
+        pass_mon <= '1'; -- Pass
+      else
+        pass_mon <= '0'; -- Fail
+      end if;
+      write_completed <= '1';
+      read_completed <= '1';
+      check_completed <= '1';
+
+  end case;
+  fail <= fail_cnt;
+end process fsm_outputs;
+
+counter_adr: process(clk, rest, adr_cnt,addr_s)
+begin
+  if rst = '0' then
+      adr_cnt <= "0000000000000";
+      adr_ch <= "0000000000000";
+      addr <= adr_cnt;
+      a0 <= '0';
+      a1 <= '0';
+      a2 <= '0';
+      a3 <= '0';
+      a4 <= '0';
+      a5 <= '0';
+      a6 <= '0';
+      a7 <= '0';
+      a8 <= '0';
+      a9 <= '0';
+      a10 <= '0';
+      a11 <= '0';
+      a12 <= '0';
+  elsif(clk'event and clk = '1') then
+      if (addr_s = '0') then
+        addr <= adr_cnt;
+        adr_ch <= adr_cnt;
+        a0 <= adr_cnt(0);
+        a1 <= adr_cnt(1);
+        a2 <= adr_cnt(2);
+        a3 <= adr_cnt(3);
+        a4 <= adr_cnt(4);
+        a5 <= adr_cnt(5);
+        a6 <= adr_cnt(6);
+        a7 <= adr_cnt(7);
+        a8 <= adr_cnt(8);
+        a9 <= adr_cnt(9);
+        a10 <= adr_cnt(10);
+        a11 <= adr_cnt(11);
+        a12 <= adr_cnt(12);
+        adr_cnt <= adr_cnt + '1';
+      end if;
+  end if;
+end process;
+
+end arc;
